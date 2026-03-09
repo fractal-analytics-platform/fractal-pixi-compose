@@ -1,0 +1,133 @@
+[workspace]
+authors = ["lorenzo <lorenzo.cerrone@uzh.ch>"]
+channels = ["conda-forge"]
+name = "fractal-pixi-compose"
+platforms = ["osx-arm64"]
+version = "0.1.0"
+
+# Base Python dependency
+[feature.py11.dependencies]
+python = "==3.11"
+[feature.py12.dependencies]
+python = "==3.12"
+[feature.py13.dependencies]
+python = "==3.13"
+[feature.py14.dependencies]
+python = "==3.14"
+
+# ─── fractal-server feature ───────────────────────────────────────────────────
+
+[feature.fractal-server.dependencies]
+postgresql = ">=17.0,<18.0"
+
+[feature.fractal-server.pypi-dependencies]
+fractal-server = "==2.19.4"
+# Local development version of fractal-server
+# fractal-server = {path = "../fractal-server", editable = true}
+
+[feature.fractal-server.activation.env]
+ADMIN_EMAIL = "admin@example.org"
+ADMIN_PWD = "1234"
+ADMIN_PROJECT_DIR = "$PIXI_PROJECT_ROOT/project_dir"
+PGDATA = "$PIXI_PROJECT_ROOT/.postgres/data"
+PGHOST = "localhost"
+
+[feature.fractal-server.tasks._pg-stop]
+cmd = "pg_ctl status -D $PGDATA && pg_ctl -D $PGDATA stop || true"
+description = "Stop PostgreSQL server if running"
+
+[feature.fractal-server.tasks._pg-init]
+cmd = "rm -rf $PGDATA && initdb -D $PGDATA --no-locale --encoding=UTF8 --username=fractal --auth=trust"
+depends-on = ["_pg-stop"]
+description = "Wipe data dir and re-initialize from scratch"
+
+[feature.fractal-server.tasks._pg-start]
+cmd = "pg_ctl -D $PGDATA -l $PIXI_PROJECT_ROOT/.postgres/logfile start"
+depends-on = ["_pg-init"]
+description = "Start PostgreSQL server"
+
+[feature.fractal-server.tasks._pg-create-db]
+cmd = "createdb -h localhost -U fractal fractaldb"
+depends-on = ["_pg-start"]
+description = "Create fractaldb database"
+
+[feature.fractal-server.tasks._set-db]
+cmd = "fractalctl set-db"
+depends-on = ["_pg-create-db"]
+
+[feature.fractal-server.tasks._build-resources]
+cmd = "python $PIXI_PROJECT_ROOT/scripts/build_resources.py"
+description = "Generate resources.json from _resources_template.json with absolute paths"
+
+[feature.fractal-server.tasks._set-admin-user]
+cmd = """
+fractalctl init-db-data \
+    --admin-email $ADMIN_EMAIL --admin-pwd $ADMIN_PWD \
+    --admin-project-dir $ADMIN_PROJECT_DIR \
+    --profile default \
+    --resource $PIXI_PROJECT_ROOT/resources.json
+"""
+depends-on = ["_set-db", "_build-resources"]
+description = "Set up fractal-server database and admin user"
+
+[feature.fractal-server.tasks.fractal-server-setup]
+depends-on = ["_set-admin-user"]
+description = "Set up fractal-server environment and database (wipes data if already exists)"
+
+[feature.fractal-server.tasks.fractal-server-start]
+cmd = "fractalctl start --host 0.0.0.0 -p 8000"
+description = "Start fractal-server on http://localhost:8000"
+
+# ─── fractal-web feature ──────────────────────────────────────────────────────
+
+[feature.fractal-web.dependencies]
+nodejs = "~=20.0"
+
+[feature.fractal-web.activation.env]
+FRACTAL_WEB_DIR = "$PIXI_PROJECT_ROOT/.fractal-web"
+FRACTAL_WEB_VERSION = "v1.23.0"
+
+[feature.fractal-web.tasks._pre-install-fractal-web]
+cmd = """
+rm -rf $FRACTAL_WEB_DIR && \
+git clone https://github.com/fractal-analytics-platform/fractal-web $FRACTAL_WEB_DIR && \
+git -C $FRACTAL_WEB_DIR checkout $FRACTAL_WEB_VERSION
+"""
+description = "Clone fractal-web repository and check out specified version"
+
+[feature.fractal-web.tasks._fractal-web-install-components]
+cmd = "cd $FRACTAL_WEB_DIR/components && npm install"
+description = "Install npm dependencies for fractal-web components"
+depends-on = ["_pre-install-fractal-web"]
+
+[feature.fractal-web.tasks._fractal-web-install]
+cmd = "cd $FRACTAL_WEB_DIR && npm install"
+depends-on = ["_fractal-web-install-components"]
+description = "Install npm dependencies for fractal-web"
+
+[feature.fractal-web.tasks.fractal-web-setup]
+depends-on = ["_fractal-web-install"]
+description = "Set up fractal-web environment"
+
+[feature.fractal-web.tasks.fractal-web-start]
+cmd = "npm run dev --prefix $FRACTAL_WEB_DIR"
+description = "Start fractal-web on http://localhost:5173"
+
+# ─── orchestrator feature ─────────────────────────────────────────────────────
+
+[feature.orchestrator.dependencies]
+process-compose = ">=1.0,<2"
+
+[feature.orchestrator.tasks.start]
+cmd = "process-compose up -f $PIXI_PROJECT_ROOT/process-compose.yaml"
+description = "Start fractal-server and fractal-web via process-compose"
+
+# ─── environments ──────────────────────────────────────────────────────
+[environments]
+fractal-server = ["py13", "fractal-server"]
+fractal-web = ["fractal-web"]
+orchestrator = ["orchestrator"]
+py11 = ["py11"]
+py12 = ["py12"]
+py13 = ["py13"]
+py14 = ["py14"]

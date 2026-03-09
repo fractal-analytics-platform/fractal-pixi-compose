@@ -1,0 +1,28 @@
+version: "0.5"
+
+processes:
+  postgres:
+    command: pixi run -e fractal-server sh -c 'postgres -D $PGDATA'
+    description: "PostgreSQL database server"
+    readiness_probe:
+      exec:
+        command: pixi run -e fractal-server sh -c 'pg_isready -h localhost -U fractal -d fractaldb'
+
+  fractal-server:
+    command: pixi run -e fractal-server fractal-server-start
+    description: "fractal-server on http://localhost:8000"
+    depends_on:
+      postgres:
+        condition: process_healthy
+    readiness_probe:
+      http_get:
+        host: localhost
+        port: 8000
+        path: /api/alive/
+
+  fractal-web:
+    command: pixi run -e fractal-web fractal-web-start
+    description: "fractal-web on http://localhost:5173"
+    depends_on:
+      fractal-server:
+        condition: process_healthy
