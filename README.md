@@ -118,5 +118,6 @@ pixi run -e fractal-server _pg-stop
     - fractal-tasks-core
     - fractal-uzh-converters
     - fractal-cellpose-sam-task
+- Add a napari viewer with plugins setup
 - Setup some testing
 - Document how to personalize the configuration
