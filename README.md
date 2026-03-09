@@ -78,7 +78,7 @@ pixi run -e fractal-web fractal-web-start
 To stop, press `Ctrl+C` in each terminal. To check whether PostgreSQL is still running:
 
 ```bash
-pixi run -e fractal-server pg_ctl status -D .postgres/data
+pixi run -e fractal-server pg_ctl status -D local/postgres/data
 ```
 
 If it is still running, shut it down with:

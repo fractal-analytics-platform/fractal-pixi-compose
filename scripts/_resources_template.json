@@ -5,13 +5,13 @@
     "prevent_new_submissions": false,
     "timestamp_created": "2026-03-06T16:13:36.759739+01:00",
     "host": null,
-    "jobs_local_dir": "{{PIXI_PROJECT_ROOT}}/data-jobs",
+    "jobs_local_dir": "{{PIXI_PROJECT_ROOT}}/local/data-jobs",
     "jobs_runner_config": {
         "parallel_tasks_per_job": null
     },
     "jobs_slurm_python_worker": null,
     "jobs_poll_interval": 0,
-    "tasks_local_dir": "{{PIXI_PROJECT_ROOT}}/data-tasks",
+    "tasks_local_dir": "{{PIXI_PROJECT_ROOT}}/local/data-tasks",
     "tasks_python_config": {
         "versions": {
             "3.11": "{{PIXI_PROJECT_ROOT}}/.pixi/envs/py11/bin/python3.11",

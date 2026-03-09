@@ -25,7 +25,8 @@ def main() -> None:
         sys.exit(1)
 
     input_path = os.path.join(project_root, "scripts", "_resources_template.json")
-    output_path = os.path.join(project_root, "resources.json")
+    output_path = os.path.join(project_root, "local", "resources.json")
+    os.makedirs(os.path.dirname(output_path), exist_ok=True)
 
     with open(input_path) as f:
         data = json.load(f)

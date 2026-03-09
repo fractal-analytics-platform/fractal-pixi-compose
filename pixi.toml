@@ -28,8 +28,8 @@ fractal-server = "==2.19.4"
 [feature.fractal-server.activation.env]
 ADMIN_EMAIL = "admin@example.org"
 ADMIN_PWD = "1234"
-ADMIN_PROJECT_DIR = "$PIXI_PROJECT_ROOT/project_dir"
-PGDATA = "$PIXI_PROJECT_ROOT/.postgres/data"
+ADMIN_PROJECT_DIR = "$PIXI_PROJECT_ROOT/local/project_dir"
+PGDATA = "$PIXI_PROJECT_ROOT/local/postgres/data"
 PGHOST = "localhost"
 
 [feature.fractal-server.tasks._pg-stop]
@@ -42,7 +42,7 @@ depends-on = ["_pg-stop"]
 description = "Wipe data dir and re-initialize from scratch"
 
 [feature.fractal-server.tasks._pg-start]
-cmd = "pg_ctl -D $PGDATA -l $PIXI_PROJECT_ROOT/.postgres/logfile start"
+cmd = "pg_ctl -D $PGDATA -l $PIXI_PROJECT_ROOT/local/postgres/logfile start"
 depends-on = ["_pg-init"]
 description = "Start PostgreSQL server"
 
@@ -65,7 +65,7 @@ fractalctl init-db-data \
     --admin-email $ADMIN_EMAIL --admin-pwd $ADMIN_PWD \
     --admin-project-dir $ADMIN_PROJECT_DIR \
     --profile default \
-    --resource $PIXI_PROJECT_ROOT/resources.json
+    --resource $PIXI_PROJECT_ROOT/local/resources.json
 """
 depends-on = ["_set-db", "_build-resources"]
 description = "Set up fractal-server database and admin user"
@@ -84,7 +84,7 @@ description = "Start fractal-server on http://localhost:8000"
 nodejs = "~=20.0"
 
 [feature.fractal-web.activation.env]
-FRACTAL_WEB_DIR = "$PIXI_PROJECT_ROOT/.fractal-web"
+FRACTAL_WEB_DIR = "$PIXI_PROJECT_ROOT/local/fractal-web"
 FRACTAL_WEB_VERSION = "v1.23.0"
 
 [feature.fractal-web.tasks._pre-install-fractal-web]
@@ -119,7 +119,7 @@ description = "Start fractal-web on http://localhost:5173"
 process-compose = ">=1.0,<2"
 
 [feature.orchestrator.tasks.start]
-cmd = "process-compose up -f $PIXI_PROJECT_ROOT/process-compose.yaml"
+cmd = "pixi run -e fractal-server _pg-stop; process-compose up --tui=true -f $PIXI_PROJECT_ROOT/process-compose.yaml"
 description = "Start fractal-server and fractal-web via process-compose"
 
 # ─── environments ──────────────────────────────────────────────────────
