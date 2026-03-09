@@ -107,3 +107,16 @@ pixi run -e fractal-server _pg-stop
 | `fractal-web` | fractal-web (Node.js 20) |
 | `orchestrator` | process-compose |
 | `py11`–`py14` | Bare Python interpreters for fractal task workers |
+
+### TODOs
+- Add additional services:
+    - fractal-data
+    - vizarr
+    - dashboard
+- Add pixi configuration for task collections.
+- Add selected tasks packages collections during setup:
+    - fractal-tasks-core
+    - fractal-uzh-converters
+    - fractal-cellpose-sam-task
+- Setup some testing
+- Document how to personalize the configuration
