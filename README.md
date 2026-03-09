@@ -44,7 +44,6 @@ pixi run -e fractal-web fractal-web-setup
 Starts PostgreSQL, fractal-server, and fractal-web in the correct order, with health checks between each step.
 
 ```bash
-# Headless (logs streamed to terminal)
 pixi run -e orchestrator start
 ```
 
