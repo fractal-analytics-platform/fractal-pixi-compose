@@ -122,6 +122,19 @@ process-compose = ">=1.0,<2"
 cmd = "pixi run -e fractal-server _pg-stop; process-compose up --tui=true -f $PIXI_PROJECT_ROOT/process-compose.yaml"
 description = "Start fractal-server and fractal-web via process-compose"
 
+# ─── napari-ome-zarr feature ─────────────────────────────────────────────────
+#[feature.napari-ome-zarr.dependencies]
+
+[feature.napari-ome-zarr.pypi-dependencies]
+napari = { "extras" = ["all"], version = "<0.7" }
+napari-ome-zarr-navigator = ">=0.2.4, <0.3"
+napari-ome-zarr = ">=0.6.1, <0.7"
+napari-feature-classifier = ">=0.3.2, <0.4"
+napari-feature-visualization = ">=0.0.2, <0.0.3"
+
+[feature.napari-ome-zarr.tasks]
+napari-ome-zarr = "napari"
+
 # ─── environments ──────────────────────────────────────────────────────
 [environments]
 fractal-server = ["py13", "fractal-server"]
@@ -131,3 +144,4 @@ py11 = ["py11"]
 py12 = ["py12"]
 py13 = ["py13"]
 py14 = ["py14"]
+napari-ome-zarr = ["py13", "napari-ome-zarr"]
