@@ -21,7 +21,7 @@ python = "==3.14"
 postgresql = ">=18.0,<19.0"
 
 [feature.fractal-server.pypi-dependencies]
-fractal-server = "==2.19.4"
+fractal-server = "==2.20.1"
 # Local development version of fractal-server
 # fractal-server = {path = "../fractal-server", editable = true}
 
@@ -31,28 +31,29 @@ ADMIN_PWD = "1234"
 ADMIN_PROJECT_DIR = "$PIXI_PROJECT_ROOT/local/project_dir"
 PGDATA = "$PIXI_PROJECT_ROOT/local/postgres/data"
 PGHOST = "localhost"
+PGPORT = "5433"
 
 [feature.fractal-server.tasks._pg-stop]
-cmd = "pg_ctl status -D $PGDATA && pg_ctl -D $PGDATA stop || true"
+cmd = "pg_ctl -o '-p $PGPORT' status -D $PGDATA && pg_ctl -o '-p $PGPORT' -D $PGDATA stop || true"
 description = "Stop PostgreSQL server if running"
 
 [feature.fractal-server.tasks._pg-init]
-cmd = "rm -rf $PGDATA && initdb -D $PGDATA --no-locale --encoding=UTF8 --username=fractal --auth=trust"
+cmd = "rm -rf $PGDATA local/data-jobs local/data-tasks && initdb -D $PGDATA --no-locale --encoding=UTF8 --username=fractal --auth=trust"
 depends-on = ["_pg-stop"]
 description = "Wipe data dir and re-initialize from scratch"
 
 [feature.fractal-server.tasks._pg-start]
-cmd = "pg_ctl -D $PGDATA -l $PIXI_PROJECT_ROOT/local/postgres/logfile start"
+cmd = "pg_ctl -o '-p $PGPORT' -D $PGDATA -l $PIXI_PROJECT_ROOT/local/postgres/logfile start"
 depends-on = ["_pg-init"]
 description = "Start PostgreSQL server"
 
 [feature.fractal-server.tasks._pg-create-db]
-cmd = "createdb -h localhost -U fractal fractaldb"
+cmd = "createdb -p $PGPORT -h localhost -U fractal fractaldb"
 depends-on = ["_pg-start"]
 description = "Create fractaldb database"
 
 [feature.fractal-server.tasks._set-db]
-cmd = "fractalctl set-db"
+cmd = "POSTGRES_PORT=$PGPORT fractalctl set-db"
 depends-on = ["_pg-create-db"]
 
 [feature.fractal-server.tasks._build-resources]
@@ -61,7 +62,7 @@ description = "Generate resources.json from _resources_template.json with absolu
 
 [feature.fractal-server.tasks._set-admin-user]
 cmd = """
-fractalctl init-db-data \
+POSTGRES_PORT=$PGPORT fractalctl init-db-data \
     --admin-email $ADMIN_EMAIL --admin-pwd $ADMIN_PWD \
     --admin-project-dir $ADMIN_PROJECT_DIR \
     --profile default \
@@ -75,17 +76,17 @@ depends-on = ["_set-admin-user"]
 description = "Set up fractal-server environment and database (wipes data if already exists)"
 
 [feature.fractal-server.tasks.fractal-server-start]
-cmd = "fractalctl start --host 0.0.0.0 -p 8000"
+cmd = "POSTGRES_PORT=$PGPORT fractalctl start --host 0.0.0.0 -p 8000"
 description = "Start fractal-server on http://localhost:8000"
 
 # ─── fractal-web feature ──────────────────────────────────────────────────────
 
 [feature.fractal-web.dependencies]
-nodejs = "~=20.0"
+nodejs = "~=24.0"
 
 [feature.fractal-web.activation.env]
 FRACTAL_WEB_DIR = "$PIXI_PROJECT_ROOT/local/fractal-web"
-FRACTAL_WEB_VERSION = "v1.23.0"
+FRACTAL_WEB_VERSION = "v1.24.0"
 
 [feature.fractal-web.tasks._pre-install-fractal-web]
 cmd = """
