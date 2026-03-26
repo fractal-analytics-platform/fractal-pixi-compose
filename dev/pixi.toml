@@ -6,15 +6,12 @@ platforms = ["osx-arm64", "linux-64"]
 version = "0.1.0"
 
 [activation.env]
-# postgres
+# postgres and backend
 PGDATA = "$PIXI_PROJECT_ROOT/local/postgres/data"
-PGHOST = "localhost"
-PGPORT = "5433"
-POSTGRES_PORT = "5433"
-# backend
 POSTGRES_DB = "fractaldb"
 POSTGRES_HOST = "localhost"
 POSTGRES_USER = "fractal"
+POSTGRES_PORT = "5433"
 POSTGRES_PASSWORD = "fractal"
 ADMIN_EMAIL = "admin@example.org"
 ADMIN_PWD = "1234"
@@ -27,6 +24,19 @@ FRACTAL_LOGGING_LEVEL = "20"
 # frontend
 FRACTAL_WEB_DIR = "$PIXI_PROJECT_ROOT/local/fractal-web"
 FRACTAL_WEB_VERSION = "v1.24.0"
+
+FRACTAL_SERVER_HOST = "http://127.0.0.1:8000"
+ORIGIN = "http://localhost:5173"
+# PORT = "5173"
+AUTH_COOKIE_DOMAIN = "localhost"
+# Required for HTTP (non-HTTPS) local dev; set to true when behind TLS
+AUTH_COOKIE_SECURE = "false"
+PUBLIC_FRACTAL_ADMIN_SUPPORT_EMAIL = "admin@example.org"
+BODY_SIZE_LIMIT = "5000000"
+
+
+
+# CLI client
 FRACTAL_SERVER = "http://localhost:8000"
 FRACTAL_USER = "admin@example.org"
 FRACTAL_PASSWORD = "1234"
@@ -47,12 +57,12 @@ depends-on = ["db-cleanup"]
 cmd = """
 mkdir -p $PGDATA && \
 initdb -D $PGDATA --no-locale --encoding=UTF8 --username=$POSTGRES_USER --auth=trust && \
-pg_ctl -o '-p $PGPORT' -D $PGDATA -l $PIXI_PROJECT_ROOT/local/postgres/logfile start && \
-createdb -p $PGPORT -h $POSTGRES_HOST -U $POSTGRES_USER $POSTGRES_DB
+pg_ctl -o '-p $POSTGRES_PORT' -D $PGDATA -l $PIXI_PROJECT_ROOT/local/postgres/logfile start && \
+createdb -p $POSTGRES_PORT -h $POSTGRES_HOST -U $POSTGRES_USER $POSTGRES_DB
 """
 
 [tasks.db-stop]
-cmd = "pg_ctl -o '-p $PGPORT' status -D $PGDATA && pg_ctl -o '-p $PGPORT' -D $PGDATA stop || true"
+cmd = "pg_ctl -o '-p $POSTGRES_PORT' status -D $PGDATA && pg_ctl -o '-p $POSTGRES_PORT' -D $PGDATA stop || true"
 
 [tasks.db-cleanup]
 depends-on = ["db-stop"]
