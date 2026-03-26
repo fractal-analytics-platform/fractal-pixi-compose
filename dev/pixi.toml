@@ -10,6 +10,7 @@ version = "0.1.0"
 PGDATA = "$PIXI_PROJECT_ROOT/local/postgres/data"
 PGHOST = "localhost"
 PGPORT = "5433"
+POSTGRES_PORT = "5433"
 # backend
 POSTGRES_DB = "fractaldb"
 POSTGRES_HOST = "localhost"
@@ -62,12 +63,12 @@ cmd = "python $PIXI_PROJECT_ROOT/scripts/build_resources.py"
 
 [tasks.backend-set-db]
 depends-on = ["db-setup", "backend-prepare-resource"]
-cmd = "POSTGRES_PORT=$PGPORT fractalctl set-db"
+cmd = "fractalctl set-db"
 
 [tasks.backend-setup]
 depends-on = ["backend-set-db"]
 cmd = """
-POSTGRES_PORT=$PGPORT fractalctl init-db-data \
+fractalctl init-db-data \
     --admin-email $ADMIN_EMAIL --admin-pwd $ADMIN_PWD \
     --admin-project-dir $ADMIN_PROJECT_DIR \
     --profile default \
@@ -75,7 +76,7 @@ POSTGRES_PORT=$PGPORT fractalctl init-db-data \
 """
 
 [tasks.backend-start]
-cmd = "POSTGRES_PORT=$PGPORT fractalctl start --host 0.0.0.0 -p 8000"
+cmd = "fractalctl start --host 0.0.0.0 -p 8000"
 
 [tasks.backend-cleanup]
 cmd = "rm -rf local/data-jobs local/data-tasks"
@@ -106,8 +107,5 @@ depends-on = ["db-cleanup", "backend-cleanup", "frontend-cleanup"]
 [tasks.collect-fractal-tasks-mock]
 cmd = """
 wget --quiet -O local/fractal_tasks_mock-0.0.1-py3-none-any.whl https://github.com/fractal-analytics-platform/fractal-server/raw/e0a3ca44f521fe622cf1d3a09d3e5058b096c6f2/tests/v2/fractal_tasks_mock/dist/fractal_tasks_mock-0.0.1-py3-none-any.whl && \
-export FRACTAL_SERVER=$FRACTAL_SERVER && \
-export FRACTAL_PASSWORD=$FRACTAL_PASSWORD && \
-export FRACTAL_USER=$FRACTAL_USER && \
 fractal task collect ./local/fractal_tasks_mock-0.0.1-py3-none-any.whl
 """
