@@ -119,3 +119,9 @@ cmd = """
 wget --quiet -O local/fractal_tasks_mock-0.0.1-py3-none-any.whl https://github.com/fractal-analytics-platform/fractal-server/raw/e0a3ca44f521fe622cf1d3a09d3e5058b096c6f2/tests/v2/fractal_tasks_mock/dist/fractal_tasks_mock-0.0.1-py3-none-any.whl && \
 fractal task collect ./local/fractal_tasks_mock-0.0.1-py3-none-any.whl
 """
+
+[tasks.collect-fractal-tasks-core]
+cmd = "fractal task collect fractal-tasks-core --package-version 2.0.0"
+
+[tasks.collect-fractal-uzh-converters]
+cmd = "fractal task collect fractal-uzh-converters --package-version 0.5.0"

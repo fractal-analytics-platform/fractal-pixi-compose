@@ -26,16 +26,9 @@ processes:
         port: 5173
         path: /alive
 
-  fractal-tasks-core:
-    command: pixi run collect-fractal-tasks-core
-    description: "Trigger collection of fractal-tasks-core"
-    depends_on:
-      fractal-server:
-        condition: process_healthy
-
-  fractal-uzh-converters:
-    command: pixi run collect-fractal-uzh-converters
-    description: "Trigger collection of fractal-uzh-converters"
+  fractal-tasks-mock:
+    command: pixi run collect-fractal-tasks-mock
+    description: "Trigger collection of fractal-tasks-mock"
     depends_on:
       fractal-server:
         condition: process_healthy
