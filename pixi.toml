@@ -5,61 +5,78 @@ name = "fractal-pixi-compose"
 platforms = ["osx-arm64", "linux-64"]
 version = "0.1.0"
 
-# Base Python dependency
-[feature.py11.dependencies]
-python = "==3.11"
-[feature.py12.dependencies]
-python = "==3.12"
-[feature.py13.dependencies]
-python = "==3.13"
-[feature.py14.dependencies]
-python = "==3.14"
-
-# ─── fractal-server feature ───────────────────────────────────────────────────
-
-[feature.fractal-server.dependencies]
-postgresql = ">=18.0,<19.0"
-
-[feature.fractal-server.pypi-dependencies]
-fractal-server = "==2.19.4"
-# Local development version of fractal-server
-# fractal-server = {path = "../fractal-server", editable = true}
-
-[feature.fractal-server.activation.env]
+[activation.env]
+# postgres and backend
+PGDATA = "$PIXI_PROJECT_ROOT/local/postgres/data"
+POSTGRES_DB = "fractaldb"
+POSTGRES_HOST = "localhost"
+POSTGRES_USER = "fractal"
+POSTGRES_PORT = "5433"
+POSTGRES_PASSWORD = "fractal"
 ADMIN_EMAIL = "admin@example.org"
 ADMIN_PWD = "1234"
 ADMIN_PROJECT_DIR = "$PIXI_PROJECT_ROOT/local/project_dir"
-PGDATA = "$PIXI_PROJECT_ROOT/local/postgres/data"
-PGHOST = "localhost"
+JWT_SECRET_KEY = "local-dev-secret-change-me"
+FRACTAL_RUNNER_BACKEND = "local"
+FRACTAL_DEFAULT_GROUP_NAME = "All"
+JWT_EXPIRE_SECONDS = "84600"
+FRACTAL_LOGGING_LEVEL = "20"
+# frontend
+FRACTAL_WEB_DIR = "$PIXI_PROJECT_ROOT/local/fractal-web"
+FRACTAL_WEB_VERSION = "v1.24.0"
 
-[feature.fractal-server.tasks._pg-stop]
-cmd = "pg_ctl status -D $PGDATA && pg_ctl -D $PGDATA stop || true"
-description = "Stop PostgreSQL server if running"
+FRACTAL_SERVER_HOST = "http://127.0.0.1:8000"
+ORIGIN = "http://localhost:5173"
+# PORT = "5173"
+AUTH_COOKIE_DOMAIN = "localhost"
+# Required for HTTP (non-HTTPS) local dev; set to true when behind TLS
+AUTH_COOKIE_SECURE = "false"
+PUBLIC_FRACTAL_ADMIN_SUPPORT_EMAIL = "admin@example.org"
+BODY_SIZE_LIMIT = "5000000"
 
-[feature.fractal-server.tasks._pg-init]
-cmd = "rm -rf $PGDATA && initdb -D $PGDATA --no-locale --encoding=UTF8 --username=fractal --auth=trust"
-depends-on = ["_pg-stop"]
-description = "Wipe data dir and re-initialize from scratch"
 
-[feature.fractal-server.tasks._pg-start]
-cmd = "pg_ctl -D $PGDATA -l $PIXI_PROJECT_ROOT/local/postgres/logfile start"
-depends-on = ["_pg-init"]
-description = "Start PostgreSQL server"
 
-[feature.fractal-server.tasks._pg-create-db]
-cmd = "createdb -h localhost -U fractal fractaldb"
-depends-on = ["_pg-start"]
-description = "Create fractaldb database"
+# CLI client
+FRACTAL_SERVER = "http://localhost:8000"
+FRACTAL_USER = "admin@example.org"
+FRACTAL_PASSWORD = "1234"
 
-[feature.fractal-server.tasks._set-db]
-cmd = "fractalctl set-db"
-depends-on = ["_pg-create-db"]
+[dependencies]
+python = ">=3.13.0, <3.14.0"
+nodejs = ">=24.0, <25.0"
+postgresql = ">=18.0,<19.0"
+process-compose = "*"
 
-[feature.fractal-server.tasks._build-resources]
+[pypi-dependencies]
+fractal-server = "==2.20.1"
+# fractal-server = {path = "../fractal-server", editable = true}
+fractal-client = "==2.20.1"
+
+[tasks.db-setup]
+depends-on = ["db-cleanup"]
+cmd = """
+mkdir -p $PGDATA && \
+initdb -D $PGDATA --no-locale --encoding=UTF8 --username=$POSTGRES_USER --auth=trust && \
+pg_ctl -o '-p $POSTGRES_PORT' -D $PGDATA -l $PIXI_PROJECT_ROOT/local/postgres/logfile start && \
+createdb -p $POSTGRES_PORT -h $POSTGRES_HOST -U $POSTGRES_USER $POSTGRES_DB
+"""
+
+[tasks.db-stop]
+cmd = "pg_ctl -o '-p $POSTGRES_PORT' status -D $PGDATA && pg_ctl -o '-p $POSTGRES_PORT' -D $PGDATA stop || true"
+
+[tasks.db-cleanup]
+depends-on = ["db-stop"]
+cmd = "rm -rf $PGDATA"
+
+[tasks.backend-prepare-resource]
 cmd = "python $PIXI_PROJECT_ROOT/scripts/build_resources.py"
-description = "Generate resources.json from _resources_template.json with absolute paths"
 
-[feature.fractal-server.tasks._set-admin-user]
+[tasks.backend-set-db]
+depends-on = ["db-setup", "backend-prepare-resource"]
+cmd = "fractalctl set-db"
+
+[tasks.backend-setup]
+depends-on = ["backend-set-db"]
 cmd = """
 fractalctl init-db-data \
     --admin-email $ADMIN_EMAIL --admin-pwd $ADMIN_PWD \
@@ -67,81 +84,38 @@ fractalctl init-db-data \
     --profile default \
     --resource $PIXI_PROJECT_ROOT/local/resources.json
 """
-depends-on = ["_set-db", "_build-resources"]
-description = "Set up fractal-server database and admin user"
 
-[feature.fractal-server.tasks.fractal-server-setup]
-depends-on = ["_set-admin-user"]
-description = "Set up fractal-server environment and database (wipes data if already exists)"
-
-[feature.fractal-server.tasks.fractal-server-start]
+[tasks.backend-start]
 cmd = "fractalctl start --host 0.0.0.0 -p 8000"
-description = "Start fractal-server on http://localhost:8000"
 
-# ─── fractal-web feature ──────────────────────────────────────────────────────
+[tasks.backend-cleanup]
+cmd = "rm -rf local/data-jobs local/data-tasks"
 
-[feature.fractal-web.dependencies]
-nodejs = "~=20.0"
-
-[feature.fractal-web.activation.env]
-FRACTAL_WEB_DIR = "$PIXI_PROJECT_ROOT/local/fractal-web"
-FRACTAL_WEB_VERSION = "v1.23.0"
-
-[feature.fractal-web.tasks._pre-install-fractal-web]
+[tasks.frontend-setup]
 cmd = """
 rm -rf $FRACTAL_WEB_DIR && \
+mkdir -p $FRACTAL_WEB_DIR && \
 git clone https://github.com/fractal-analytics-platform/fractal-web $FRACTAL_WEB_DIR && \
-git -C $FRACTAL_WEB_DIR checkout $FRACTAL_WEB_VERSION
+git -C $FRACTAL_WEB_DIR checkout $FRACTAL_WEB_VERSION && \
+cd $FRACTAL_WEB_DIR && \
+npm install
 """
-description = "Clone fractal-web repository and check out specified version"
 
-[feature.fractal-web.tasks._fractal-web-install-components]
-cmd = "cd $FRACTAL_WEB_DIR/components && npm install"
-description = "Install npm dependencies for fractal-web components"
-depends-on = ["_pre-install-fractal-web"]
-
-[feature.fractal-web.tasks._fractal-web-install]
-cmd = "cd $FRACTAL_WEB_DIR && npm install"
-depends-on = ["_fractal-web-install-components"]
-description = "Install npm dependencies for fractal-web"
-
-[feature.fractal-web.tasks.fractal-web-setup]
-depends-on = ["_fractal-web-install"]
-description = "Set up fractal-web environment"
-
-[feature.fractal-web.tasks.fractal-web-start]
+[tasks.frontend-start]
 cmd = "npm run dev --prefix $FRACTAL_WEB_DIR"
-description = "Start fractal-web on http://localhost:5173"
 
-# ─── orchestrator feature ─────────────────────────────────────────────────────
+[tasks.frontend-cleanup]
+cmd = "rm -rf $FRACTAL_WEB_DIR"
 
-[feature.orchestrator.dependencies]
-process-compose = ">=1.0,<2"
+[tasks.setup]
+depends-on = ["backend-setup", "frontend-setup"]
 
-[feature.orchestrator.tasks.start]
-cmd = "pixi run -e fractal-server _pg-stop; process-compose up --tui=true -f $PIXI_PROJECT_ROOT/process-compose.yaml"
-description = "Start fractal-server and fractal-web via process-compose"
+[tasks.cleanup]
+depends-on = ["db-cleanup", "backend-cleanup", "frontend-cleanup"]
 
-# ─── napari-ome-zarr feature ─────────────────────────────────────────────────
-#[feature.napari-ome-zarr.dependencies]
 
-[feature.napari-ome-zarr.pypi-dependencies]
-napari = { "extras" = ["all"], version = "<0.7" }
-napari-ome-zarr-navigator = ">=0.2.4, <0.3"
-napari-ome-zarr = ">=0.6.1, <0.7"
-napari-feature-classifier = ">=0.3.2, <0.4"
-napari-feature-visualization = ">=0.0.2, <0.0.3"
-
-[feature.napari-ome-zarr.tasks]
-napari-ome-zarr = "napari"
-
-# ─── environments ──────────────────────────────────────────────────────
-[environments]
-fractal-server = ["py13", "fractal-server"]
-fractal-web = ["fractal-web"]
-orchestrator = ["orchestrator"]
-py11 = ["py11"]
-py12 = ["py12"]
-py13 = ["py13"]
-py14 = ["py14"]
-napari-ome-zarr = ["py13", "napari-ome-zarr"]
+[tasks.collect-fractal-tasks-mock]
+cmd = """
+wget --quiet -O local/fractal_tasks_mock-0.0.1-py3-none-any.whl https://github.com/fractal-analytics-platform/fractal-server/raw/e0a3ca44f521fe622cf1d3a09d3e5058b096c6f2/tests/v2/fractal_tasks_mock/dist/fractal_tasks_mock-0.0.1-py3-none-any.whl && \
+fractal task collect ./local/fractal_tasks_mock-0.0.1-py3-none-any.whl
+"""

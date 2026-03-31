@@ -1,21 +1,9 @@
 version: "0.5"
 
 processes:
-  postgres:
-    command: pixi run -e fractal-server sh -c 'postgres -D $PGDATA'
-    description: "PostgreSQL database server"
-    readiness_probe:
-      initial_delay_seconds: 1
-      period_seconds: 2
-      exec:
-        command: pixi run -e fractal-server sh -c 'pg_isready -h localhost -U fractal -d fractaldb'
-
   fractal-server:
-    command: pixi run -e fractal-server fractal-server-start
+    command: pixi run backend-start
     description: "fractal-server on http://localhost:8000"
-    depends_on:
-      postgres:
-        condition: process_healthy
     readiness_probe:
       initial_delay_seconds: 1
       period_seconds: 2
@@ -25,7 +13,7 @@ processes:
         path: /api/alive/
 
   fractal-web:
-    command: pixi run -e fractal-web fractal-web-start
+    command: pixi run frontend-start
     description: "fractal-web on http://localhost:5173"
     depends_on:
       fractal-server:
@@ -39,7 +27,7 @@ processes:
         path: /alive
 
   fractal-tasks-mock:
-    command: pixi run bash scripts/collect_fractal_tasks_mock.sh
+    command: pixi run collect-fractal-tasks-mock
     description: "Trigger collection of fractal-tasks-mock"
     depends_on:
       fractal-server:
