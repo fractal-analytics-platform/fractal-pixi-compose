@@ -41,16 +41,31 @@ FRACTAL_SERVER = "http://localhost:8000"
 FRACTAL_USER = "admin@example.org"
 FRACTAL_PASSWORD = "1234"
 
-[dependencies]
-python = ">=3.13.0, <3.14.0"
-nodejs = ">=24.0, <25.0"
-postgresql = ">=18.0,<19.0"
+[feature.orchestrator.dependencies]
 process-compose = "*"
 
-[pypi-dependencies]
+[feature.frontend.dependencies]
+nodejs = ">=24.0, <25.0"
+
+[feature.backend.dependencies]
+postgresql = ">=18.0,<19.0"
+
+[feature.backend.pypi-dependencies]
 fractal-server = "==2.20.4"
 # fractal-server = {path = "../fractal-server", editable = true}
+
+[feature.cli-client.pypi-dependencies]
 fractal-client = "==2.20.1"
+
+
+[feature.py11.dependencies]
+python = "==3.11"
+[feature.py12.dependencies]
+python = "==3.12"
+[feature.py13.dependencies]
+python = "==3.13"
+[feature.py14.dependencies]
+python = "==3.14"
 
 [tasks.db-setup]
 depends-on = ["db-cleanup"]
@@ -98,6 +113,7 @@ mkdir -p $FRACTAL_WEB_DIR && \
 git clone https://github.com/fractal-analytics-platform/fractal-web $FRACTAL_WEB_DIR && \
 git -C $FRACTAL_WEB_DIR checkout $FRACTAL_WEB_VERSION && \
 cd $FRACTAL_WEB_DIR && \
+rm -f .env .env.development .env.local && \
 npm install
 """
 
@@ -125,3 +141,11 @@ cmd = "fractal task collect fractal-tasks-core --package-version 2.0.0"
 
 [tasks.collect-fractal-uzh-converters]
 cmd = "fractal task collect fractal-uzh-converters --package-version 0.5.0"
+
+
+[environments]
+default = ["py13", "backend", "frontend", "orchestrator", "cli-client"]
+py11 = ["py11"]
+py12 = ["py12"]
+py13 = ["py13"]
+py14 = ["py14"]

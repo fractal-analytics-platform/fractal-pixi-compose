@@ -10,11 +10,15 @@ A [pixi](https://pixi.sh) workspace that manages local environments and startup 
 
 ### Install
 
+Install the default platform dependencies
+```bash
+pixi install
+```
+
+Install the default platform dependencies, as well as the Python interpreters for task packages:
 ```bash
 pixi install -a
 ```
-
-This will install all the dependency (for `postgresql`, `fractal-server`, `fractal-client` and `fractal-web`), as well as the Python interpreters for task packages.
 
 ### Set up
 
