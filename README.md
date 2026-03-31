@@ -15,7 +15,7 @@ Install the default platform dependencies
 pixi install
 ```
 
-Install the default platform dependencies, as well as the Python interpreters for task packages:
+Install the default platform dependencies, as well as the Python interpreters for task packages and a `napari` environment:
 ```bash
 pixi install -a
 ```

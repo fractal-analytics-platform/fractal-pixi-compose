@@ -143,9 +143,20 @@ cmd = "fractal task collect fractal-tasks-core --package-version 2.0.0"
 cmd = "fractal task collect fractal-uzh-converters --package-version 0.5.0"
 
 
+[feature.napari-ome-zarr.pypi-dependencies]
+napari = { "extras" = ["all"], version = "<0.7" }
+napari-ome-zarr-navigator = ">=0.2.4, <0.3"
+napari-ome-zarr = ">=0.6.1, <0.7"
+napari-feature-classifier = ">=0.3.2, <0.4"
+napari-feature-visualization = ">=0.0.2, <0.0.3"
+
+[feature.napari-ome-zarr.tasks]
+napari-ome-zarr = "napari"
+
 [environments]
 default = ["py13", "backend", "frontend", "orchestrator", "cli-client"]
 py11 = ["py11"]
 py12 = ["py12"]
 py13 = ["py13"]
 py14 = ["py14"]
+napari-ome-zarr = ["py13", "napari-ome-zarr"]
