@@ -31,6 +31,14 @@ This task:
 
 **Important**: Re-running this task will reset the database and delete all data.
 
+### Cleanup
+
+Clean up all data via
+
+```bash
+pixi run cleanup
+```
+
 ## Running
 
 ### With process-compose

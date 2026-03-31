@@ -23,7 +23,7 @@ JWT_EXPIRE_SECONDS = "84600"
 FRACTAL_LOGGING_LEVEL = "20"
 # frontend
 FRACTAL_WEB_DIR = "$PIXI_PROJECT_ROOT/local/fractal-web"
-FRACTAL_WEB_VERSION = "v1.24.0"
+FRACTAL_WEB_VERSION = "v1.24.2"
 
 FRACTAL_SERVER_HOST = "http://127.0.0.1:8000"
 ORIGIN = "http://localhost:5173"
@@ -48,7 +48,7 @@ postgresql = ">=18.0,<19.0"
 process-compose = "*"
 
 [pypi-dependencies]
-fractal-server = "==2.20.1"
+fractal-server = "==2.20.4"
 # fractal-server = {path = "../fractal-server", editable = true}
 fractal-client = "==2.20.1"
 
