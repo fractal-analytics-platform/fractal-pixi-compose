@@ -36,6 +36,7 @@ BODY_SIZE_LIMIT = "5000000"
 FRACTAL_DATA_DIR = "$PIXI_PROJECT_ROOT/local/fractal-data"
 FRACTAL_SERVER_URL = "http://127.0.0.1:8000"
 AUTHORIZATION_SCHEME = "fractal-server"
+VIZARR_VERSION = "1.2.1"
 
 # CLI client
 FRACTAL_SERVER = "http://localhost:8000"
@@ -132,11 +133,14 @@ rm -rf $FRACTAL_DATA_DIR && \
 mkdir -p $FRACTAL_DATA_DIR && \
 git clone https://github.com/fractal-analytics-platform/fractal-data.git $FRACTAL_DATA_DIR && \
 cd $FRACTAL_DATA_DIR && \
+wget https://github.com/BioNGFF/vizarr/releases/download/v$VIZARR_VERSION/dist.tar.gz && \
+tar -xvf dist.tar.gz && \
 npm install
+
 """
 
 [tasks.data-start]
-cmd = "PORT=3001 npm run start --prefix $FRACTAL_DATA_DIR"
+cmd = "PORT=3001 VIZARR_STATIC_FILES_PATH=$FRACTAL_DATA_DIR/sites/app/dist/ npm run start --prefix $FRACTAL_DATA_DIR"
 
 [tasks.data-cleanup]
 cmd = "rm -rf $FRACTAL_DATA_DIR"
