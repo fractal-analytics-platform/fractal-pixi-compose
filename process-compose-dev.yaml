@@ -25,6 +25,20 @@ processes:
         host: localhost
         port: 5173
         path: /alive
+  
+  fractal-data:
+    command: pixi run data-start
+    description: "fractal-data on http://localhost:3000"
+    depends_on:
+      fractal-server:
+        condition: process_healthy
+  
+  fractal-feature-explorer:
+    command: pixi run explorer-start
+    description: "fractal-feature-explorer on http://localhost:8501"
+    depends_on:
+      fractal-server:
+        condition: process_healthy
 
   fractal-tasks-mock:
     command: pixi run collect-fractal-tasks-mock
