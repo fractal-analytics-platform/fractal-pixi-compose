@@ -156,10 +156,17 @@ cmd = "rm -rf $FRACTAL_DATA_DIR"
 cmd = "PORT=$FRACTAL_DATA_PORT VIZARR_STATIC_FILES_PATH=$FRACTAL_DATA_DIR/sites/app/dist/ npm run start --prefix $FRACTAL_DATA_DIR"
 
 [tasks.explorer-setup]
-cmd = "mkdir -p $FRACTAL_EXPLORER_DIR"
+cmd = """
+    mkdir -p $FRACTAL_EXPLORER_DIR/.streamlit && \
+    cp configs/explorer-config.toml $FRACTAL_FEATURE_EXPLORER_CONFIG && \
+    cp configs/streamlit-config.toml $FRACTAL_EXPLORER_DIR/.streamlit/config.toml
+"""
 
 [tasks.explorer-start]
-cmd = "echo 'n' | explorer"
+cmd = """
+    cd $FRACTAL_EXPLORER_DIR && \
+    streamlit run $(python -c 'import fractal_feature_explorer.main; print(fractal_feature_explorer.main.__file__)')
+"""
 
 [tasks.explorer-cleanup]
 cmd = "rm -rf $FRACTAL_EXPLORER_DIR"
@@ -195,7 +202,7 @@ napari-feature-visualization = ">=0.0.2, <0.0.3"
 napari-ome-zarr = "napari"
 
 [environments]
-default = ["py13", "backend", "frontend", "orchestrator", "cli-client", "data", "explorer"]
+default = ["py12", "backend", "frontend", "orchestrator", "cli-client", "data", "explorer"]
 py11 = ["py11"]
 py12 = ["py12"]
 py13 = ["py13"]
