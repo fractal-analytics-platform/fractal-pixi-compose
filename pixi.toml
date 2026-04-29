@@ -26,6 +26,7 @@ FRACTAL_WEB_DIR = "$PIXI_PROJECT_ROOT/local/fractal-web"
 FRACTAL_WEB_VERSION = "v1.27.4"
 FRACTAL_SERVER_HOST = "http://127.0.0.1:8000"
 ORIGIN = "http://localhost:5173"
+PUBLIC_FRACTAL_VIZARR_VIEWER_URL = "http://localhost:3000/data/vizarr"
 # PORT = "5173"
 AUTH_COOKIE_DOMAIN = "localhost"
 # Required for HTTP (non-HTTPS) local dev; set to true when behind TLS
@@ -140,7 +141,7 @@ npm install
 """
 
 [tasks.data-start]
-cmd = "PORT=3001 VIZARR_STATIC_FILES_PATH=$FRACTAL_DATA_DIR/sites/app/dist/ npm run start --prefix $FRACTAL_DATA_DIR"
+cmd = "PORT=3000 VIZARR_STATIC_FILES_PATH=$FRACTAL_DATA_DIR/sites/app/dist/ npm run start --prefix $FRACTAL_DATA_DIR"
 
 [tasks.data-cleanup]
 cmd = "rm -rf $FRACTAL_DATA_DIR"
