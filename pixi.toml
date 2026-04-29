@@ -21,23 +21,30 @@ FRACTAL_RUNNER_BACKEND = "local"
 FRACTAL_DEFAULT_GROUP_NAME = "All"
 JWT_EXPIRE_SECONDS = "84600"
 FRACTAL_LOGGING_LEVEL = "20"
+
 # frontend
 FRACTAL_WEB_DIR = "$PIXI_PROJECT_ROOT/local/fractal-web"
 FRACTAL_WEB_VERSION = "v1.27.4"
 FRACTAL_SERVER_HOST = "http://127.0.0.1:8000"
 ORIGIN = "http://localhost:5173"
 PUBLIC_FRACTAL_VIZARR_VIEWER_URL = "http://localhost:3000/data/vizarr"
-# PORT = "5173"
+PUBLIC_FRACTAL_FEATURE_EXPLORER_URL = "http://localhost:8501"
 AUTH_COOKIE_DOMAIN = "localhost"
 # Required for HTTP (non-HTTPS) local dev; set to true when behind TLS
 AUTH_COOKIE_SECURE = "false"
 PUBLIC_FRACTAL_ADMIN_SUPPORT_EMAIL = "admin@example.org"
 BODY_SIZE_LIMIT = "5000000"
+
 # data
 FRACTAL_DATA_DIR = "$PIXI_PROJECT_ROOT/local/fractal-data"
+FRACTAL_DATA_PORT = "3000"
 FRACTAL_SERVER_URL = "http://127.0.0.1:8000"
 AUTHORIZATION_SCHEME = "fractal-server"
 VIZARR_VERSION = "1.2.1"
+
+# explorer
+FRACTAL_EXPLORER_DIR = "$PIXI_PROJECT_ROOT/local/fractal-feature-explorer"
+FRACTAL_FEATURE_EXPLORER_CONFIG = "$FRACTAL_EXPLORER_DIR/config.toml"
 
 # CLI client
 FRACTAL_SERVER = "http://localhost:8000"
@@ -56,6 +63,9 @@ postgresql = ">=18.0,<19.0"
 [feature.backend.pypi-dependencies]
 fractal-server = "==2.22.5"
 # fractal-server = {path = "../fractal-server", editable = true}
+
+[feature.explorer.pypi-dependencies]
+fractal-feature-explorer = "==0.1.17a0"
 
 [feature.cli-client.pypi-dependencies]
 fractal-client = "==2.20.1"
@@ -137,20 +147,28 @@ cd $FRACTAL_DATA_DIR && \
 wget https://github.com/BioNGFF/vizarr/releases/download/v$VIZARR_VERSION/dist.tar.gz && \
 tar -xvf dist.tar.gz && \
 npm install
-
 """
-
-[tasks.data-start]
-cmd = "PORT=3000 VIZARR_STATIC_FILES_PATH=$FRACTAL_DATA_DIR/sites/app/dist/ npm run start --prefix $FRACTAL_DATA_DIR"
 
 [tasks.data-cleanup]
 cmd = "rm -rf $FRACTAL_DATA_DIR"
 
+[tasks.data-start]
+cmd = "PORT=$FRACTAL_DATA_PORT VIZARR_STATIC_FILES_PATH=$FRACTAL_DATA_DIR/sites/app/dist/ npm run start --prefix $FRACTAL_DATA_DIR"
+
+[tasks.explorer-setup]
+cmd = "mkdir -p $FRACTAL_EXPLORER_DIR"
+
+[tasks.explorer-start]
+cmd = "echo 'n' | explorer"
+
+[tasks.explorer-cleanup]
+cmd = "rm -rf $FRACTAL_EXPLORER_DIR"
+
 [tasks.setup]
-depends-on = ["backend-setup", "frontend-setup", "data-setup"]
+depends-on = ["backend-setup", "frontend-setup", "data-setup", "explorer-setup"]
 
 [tasks.cleanup]
-depends-on = ["db-cleanup", "backend-cleanup", "frontend-cleanup", "data-cleanup"]
+depends-on = ["db-cleanup", "backend-cleanup", "frontend-cleanup", "data-cleanup", "explorer-cleanup"]
 
 
 [tasks.collect-fractal-tasks-mock]
@@ -177,7 +195,7 @@ napari-feature-visualization = ">=0.0.2, <0.0.3"
 napari-ome-zarr = "napari"
 
 [environments]
-default = ["py13", "backend", "frontend", "orchestrator", "cli-client", "data"]
+default = ["py13", "backend", "frontend", "orchestrator", "cli-client", "data", "explorer"]
 py11 = ["py11"]
 py12 = ["py12"]
 py13 = ["py13"]

@@ -32,6 +32,13 @@ processes:
     depends_on:
       fractal-server:
         condition: process_healthy
+  
+  fractal-feature-explorer:
+    command: pixi run explorer-start
+    description: "fractal-feature-explorer on http://localhost:8501"
+    depends_on:
+      fractal-server:
+        condition: process_healthy
 
   fractal-tasks-core:
     command: pixi run collect-fractal-tasks-core
