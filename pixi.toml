@@ -65,7 +65,7 @@ fractal-server = "==2.22.5"
 # fractal-server = {path = "../fractal-server", editable = true}
 
 [feature.explorer.pypi-dependencies]
-fractal-feature-explorer = "==0.1.17a0"
+fractal-feature-explorer = "==0.1.16"
 
 [feature.cli-client.pypi-dependencies]
 fractal-client = "==2.20.1"
@@ -86,29 +86,32 @@ python = "==3.14"
 depends-on = ["db-cleanup"]
 cmd = """
 mkdir -p $PGDATA && \
-initdb -D $PGDATA --no-locale --encoding=UTF8 --username=$POSTGRES_USER --auth=trust && \
-pg_ctl -o '-p $POSTGRES_PORT' -D $PGDATA -l $PIXI_PROJECT_ROOT/local/postgres/logfile start && \
-createdb -p $POSTGRES_PORT -h $POSTGRES_HOST -U $POSTGRES_USER $POSTGRES_DB
+pixi run -e backend initdb -D $PGDATA --no-locale --encoding=UTF8 --username=$POSTGRES_USER --auth=trust && \
+pixi run -e backend pg_ctl -w -o '-p $POSTGRES_PORT' -D $PGDATA -l $PIXI_PROJECT_ROOT/local/postgres/logfile start && \
+pixi run -e backend createdb -p $POSTGRES_PORT -h $POSTGRES_HOST -U $POSTGRES_USER $POSTGRES_DB
 """
 
 [tasks.db-stop]
-cmd = "pg_ctl -o '-p $POSTGRES_PORT' status -D $PGDATA && pg_ctl -o '-p $POSTGRES_PORT' -D $PGDATA stop || true"
+cmd = """
+pixi run -e backend pg_ctl -w -o '-p $POSTGRES_PORT' status -D $PGDATA && \
+pixi run -e backend pg_ctl -w -o '-p $POSTGRES_PORT' -D $PGDATA stop || true
+"""
 
 [tasks.db-cleanup]
 depends-on = ["db-stop"]
 cmd = "rm -rf $PGDATA"
 
 [tasks.backend-prepare-resource]
-cmd = "python $PIXI_PROJECT_ROOT/scripts/build_resources.py"
+cmd = "pixi run -e backend python $PIXI_PROJECT_ROOT/scripts/build_resources.py"
 
 [tasks.backend-set-db]
 depends-on = ["db-setup", "backend-prepare-resource"]
-cmd = "fractalctl set-db"
+cmd = "pixi run -e backend fractalctl set-db"
 
 [tasks.backend-setup]
 depends-on = ["backend-set-db"]
 cmd = """
-fractalctl init-db-data \
+pixi run -e backend fractalctl init-db-data \
     --admin-email $ADMIN_EMAIL --admin-pwd $ADMIN_PWD \
     --admin-project-dir $ADMIN_PROJECT_DIR \
     --profile default \
@@ -202,7 +205,12 @@ napari-feature-visualization = ">=0.0.2, <0.0.3"
 napari-ome-zarr = "napari"
 
 [environments]
-default = ["py12", "backend", "frontend", "orchestrator", "cli-client", "data", "explorer"]
+default = ["orchestrator"]
+backend = ["py12", "backend"]
+cli-client = ["py12", "cli-client"]
+frontend = ["frontend"]
+data = ["data"]
+explorer = ["py12", "explorer"]
 py11 = ["py11"]
 py12 = ["py12"]
 py13 = ["py13"]
