@@ -21,20 +21,31 @@ FRACTAL_RUNNER_BACKEND = "local"
 FRACTAL_DEFAULT_GROUP_NAME = "All"
 JWT_EXPIRE_SECONDS = "84600"
 FRACTAL_LOGGING_LEVEL = "20"
+
 # frontend
 FRACTAL_WEB_DIR = "$PIXI_PROJECT_ROOT/local/fractal-web"
 FRACTAL_WEB_VERSION = "v1.27.4"
-
-FRACTAL_SERVER_HOST = "http://127.0.0.1:8000"
+FRACTAL_SERVER_HOST = "http://localhost:8000"
 ORIGIN = "http://localhost:5173"
-# PORT = "5173"
+PUBLIC_FRACTAL_DATA_URL = "http://localhost:3000/data"
+PUBLIC_FRACTAL_VIZARR_VIEWER_URL = "http://localhost:3000/data/vizarr"
+PUBLIC_FRACTAL_FEATURE_EXPLORER_URL = "http://localhost:8501"
 AUTH_COOKIE_DOMAIN = "localhost"
 # Required for HTTP (non-HTTPS) local dev; set to true when behind TLS
 AUTH_COOKIE_SECURE = "false"
 PUBLIC_FRACTAL_ADMIN_SUPPORT_EMAIL = "admin@example.org"
 BODY_SIZE_LIMIT = "5000000"
 
+# data
+FRACTAL_DATA_DIR = "$PIXI_PROJECT_ROOT/local/fractal-data"
+FRACTAL_DATA_PORT = "3000"
+FRACTAL_SERVER_URL = "http://localhost:8000"
+AUTHORIZATION_SCHEME = "fractal-server"
+VIZARR_VERSION = "1.2.1"
 
+# explorer
+FRACTAL_EXPLORER_DIR = "$PIXI_PROJECT_ROOT/local/fractal-feature-explorer"
+FRACTAL_FEATURE_EXPLORER_CONFIG = "$FRACTAL_EXPLORER_DIR/config.toml"
 
 # CLI client
 FRACTAL_SERVER = "http://localhost:8000"
@@ -54,9 +65,14 @@ postgresql = ">=18.0,<19.0"
 fractal-server = "==2.22.5"
 # fractal-server = {path = "../fractal-server", editable = true}
 
+[feature.explorer.pypi-dependencies]
+fractal-feature-explorer = "==0.1.16"
+
 [feature.cli-client.pypi-dependencies]
 fractal-client = "==2.20.1"
 
+[feature.data.dependencies]
+nodejs = ">=24.0, <25.0"
 
 [feature.py11.dependencies]
 python = "==3.11"
@@ -71,29 +87,32 @@ python = "==3.14"
 depends-on = ["db-cleanup"]
 cmd = """
 mkdir -p $PGDATA && \
-initdb -D $PGDATA --no-locale --encoding=UTF8 --username=$POSTGRES_USER --auth=trust && \
-pg_ctl -o '-p $POSTGRES_PORT' -D $PGDATA -l $PIXI_PROJECT_ROOT/local/postgres/logfile start && \
-createdb -p $POSTGRES_PORT -h $POSTGRES_HOST -U $POSTGRES_USER $POSTGRES_DB
+pixi run -e backend initdb -D $PGDATA --no-locale --encoding=UTF8 --username=$POSTGRES_USER --auth=trust && \
+pixi run -e backend pg_ctl -w -o '-p $POSTGRES_PORT' -D $PGDATA -l $PIXI_PROJECT_ROOT/local/postgres/logfile start && \
+pixi run -e backend createdb -p $POSTGRES_PORT -h $POSTGRES_HOST -U $POSTGRES_USER $POSTGRES_DB
 """
 
 [tasks.db-stop]
-cmd = "pg_ctl -o '-p $POSTGRES_PORT' status -D $PGDATA && pg_ctl -o '-p $POSTGRES_PORT' -D $PGDATA stop || true"
+cmd = """
+pixi run -e backend pg_ctl -w -o '-p $POSTGRES_PORT' status -D $PGDATA && \
+pixi run -e backend pg_ctl -w -o '-p $POSTGRES_PORT' -D $PGDATA stop || true
+"""
 
 [tasks.db-cleanup]
 depends-on = ["db-stop"]
 cmd = "rm -rf $PGDATA"
 
 [tasks.backend-prepare-resource]
-cmd = "python $PIXI_PROJECT_ROOT/scripts/build_resources.py"
+cmd = "pixi run -e backend python $PIXI_PROJECT_ROOT/scripts/build_resources.py"
 
 [tasks.backend-set-db]
 depends-on = ["db-setup", "backend-prepare-resource"]
-cmd = "fractalctl set-db"
+cmd = "pixi run -e backend fractalctl set-db"
 
 [tasks.backend-setup]
 depends-on = ["backend-set-db"]
 cmd = """
-fractalctl init-db-data \
+pixi run -e backend fractalctl init-db-data \
     --admin-email $ADMIN_EMAIL --admin-pwd $ADMIN_PWD \
     --admin-project-dir $ADMIN_PROJECT_DIR \
     --profile default \
@@ -123,11 +142,44 @@ cmd = "npm run dev --prefix $FRACTAL_WEB_DIR"
 [tasks.frontend-cleanup]
 cmd = "rm -rf $FRACTAL_WEB_DIR"
 
+[tasks.data-setup]
+cmd = """
+rm -rf $FRACTAL_DATA_DIR && \
+mkdir -p $FRACTAL_DATA_DIR && \
+git clone https://github.com/fractal-analytics-platform/fractal-data.git $FRACTAL_DATA_DIR && \
+cd $FRACTAL_DATA_DIR && \
+wget https://github.com/BioNGFF/vizarr/releases/download/v$VIZARR_VERSION/dist.tar.gz && \
+tar -xvf dist.tar.gz && \
+npm install
+"""
+
+[tasks.data-cleanup]
+cmd = "rm -rf $FRACTAL_DATA_DIR"
+
+[tasks.data-start]
+cmd = "PORT=$FRACTAL_DATA_PORT VIZARR_STATIC_FILES_PATH=$FRACTAL_DATA_DIR/sites/app/dist/ npm run start --prefix $FRACTAL_DATA_DIR"
+
+[tasks.explorer-setup]
+cmd = """
+    mkdir -p $FRACTAL_EXPLORER_DIR/.streamlit && \
+    cp configs/explorer-config.toml $FRACTAL_FEATURE_EXPLORER_CONFIG && \
+    cp configs/streamlit-config.toml $FRACTAL_EXPLORER_DIR/.streamlit/config.toml
+"""
+
+[tasks.explorer-start]
+cmd = """
+    cd $FRACTAL_EXPLORER_DIR && \
+    streamlit run $(python -c 'import fractal_feature_explorer.main; print(fractal_feature_explorer.main.__file__)')
+"""
+
+[tasks.explorer-cleanup]
+cmd = "rm -rf $FRACTAL_EXPLORER_DIR"
+
 [tasks.setup]
-depends-on = ["backend-setup", "frontend-setup"]
+depends-on = ["backend-setup", "frontend-setup", "data-setup", "explorer-setup"]
 
 [tasks.cleanup]
-depends-on = ["db-cleanup", "backend-cleanup", "frontend-cleanup"]
+depends-on = ["db-cleanup", "backend-cleanup", "frontend-cleanup", "data-cleanup", "explorer-cleanup"]
 
 
 [tasks.collect-fractal-tasks-mock]
@@ -154,7 +206,12 @@ napari-feature-visualization = ">=0.0.2, <0.0.3"
 napari-ome-zarr = "napari"
 
 [environments]
-default = ["py13", "backend", "frontend", "orchestrator", "cli-client"]
+default = ["orchestrator"]
+backend = ["py12", "backend"]
+cli-client = ["py12", "cli-client"]
+frontend = ["frontend"]
+data = ["data"]
+explorer = ["py12", "explorer"]
 py11 = ["py11"]
 py12 = ["py12"]
 py13 = ["py13"]
