@@ -66,7 +66,7 @@ fractal-server = "==2.22.5"
 # fractal-server = {path = "../fractal-server", editable = true}
 
 [feature.explorer.pypi-dependencies]
-fractal-feature-explorer = "==0.1.16"
+fractal-feature-explorer = "==0.1.17"
 
 [feature.cli-client.pypi-dependencies]
 fractal-client = "==2.20.1"
