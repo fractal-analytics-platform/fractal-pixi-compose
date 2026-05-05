@@ -2,7 +2,7 @@ version: "0.5"
 
 processes:
   fractal-server:
-    command: pixi run backend-start
+    command: pixi run -e backend backend-start
     description: "fractal-server on http://localhost:8000"
     readiness_probe:
       initial_delay_seconds: 1
@@ -13,7 +13,7 @@ processes:
         path: /api/alive/
 
   fractal-web:
-    command: pixi run frontend-start
+    command: pixi run -e frontend frontend-start
     description: "fractal-web on http://localhost:5173"
     depends_on:
       fractal-server:
@@ -25,9 +25,23 @@ processes:
         host: localhost
         port: 5173
         path: /alive
+  
+  fractal-data:
+    command: pixi run -e data data-start
+    description: "fractal-data on http://localhost:3000"
+    depends_on:
+      fractal-server:
+        condition: process_healthy
+  
+  fractal-feature-explorer:
+    command: pixi run -e explorer explorer-start
+    description: "fractal-feature-explorer on http://localhost:8501"
+    depends_on:
+      fractal-server:
+        condition: process_healthy
 
   fractal-tasks-mock:
-    command: pixi run collect-fractal-tasks-mock
+    command: pixi run -e cli-client collect-fractal-tasks-mock
     description: "Trigger collection of fractal-tasks-mock"
     depends_on:
       fractal-server:
