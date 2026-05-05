@@ -179,7 +179,13 @@ cmd = "rm -rf $FRACTAL_EXPLORER_DIR"
 depends-on = ["backend-setup", "frontend-setup", "data-setup", "explorer-setup"]
 
 [tasks.cleanup]
-depends-on = ["db-cleanup", "backend-cleanup", "frontend-cleanup", "data-cleanup", "explorer-cleanup"]
+depends-on = [
+    "db-cleanup",
+    "backend-cleanup",
+    "frontend-cleanup",
+    "data-cleanup",
+    "explorer-cleanup",
+]
 
 
 [tasks.collect-fractal-tasks-mock]
@@ -189,10 +195,10 @@ fractal task collect ./local/fractal_tasks_mock-0.0.1-py3-none-any.whl
 """
 
 [tasks.collect-fractal-tasks-core]
-cmd = "fractal task collect fractal-tasks-core --package-version 2.0.0"
+cmd = "fractal task collect fractal-tasks-core --package-version 2.0.1"
 
 [tasks.collect-fractal-uzh-converters]
-cmd = "fractal task collect fractal-uzh-converters --package-version 0.5.0"
+cmd = "fractal task collect fractal-uzh-converters --package-version 0.5.1"
 
 
 [feature.napari-ome-zarr.pypi-dependencies]
